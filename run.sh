@@ -9,6 +9,11 @@ if [ "$#" -gt 0 ]; then shift; fi
 case "$mode" in
   server) java -cp build/classes kr.ac.moyeotalk.server.ChatServer "$@" ;;
   client) java -cp build/classes kr.ac.moyeotalk.client.ChatClient "$@" ;;
-  test) java -ea -cp build/classes kr.ac.moyeotalk.StarterTest ;;
-  *) echo '사용법: ./run.sh server [port] | client [host] [port] | test'; exit 1 ;;
+  test|test-local)
+    java -ea -cp build/classes kr.ac.moyeotalk.StarterTest codec
+    java -ea -cp build/classes kr.ac.moyeotalk.client.ConsoleInputTest
+    java -ea -cp build/classes kr.ac.moyeotalk.server.ReliabilityTest
+    if [ "$mode" = "test" ]; then java -ea -cp build/classes kr.ac.moyeotalk.StarterTest; fi
+    ;;
+  *) echo '사용법: ./run.sh server [port] | client [host] [port] | test | test-local'; exit 1 ;;
 esac
