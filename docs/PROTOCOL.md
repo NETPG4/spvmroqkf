@@ -43,19 +43,40 @@ TCP 위에 UTF-8 텍스트를 사용합니다. 서버와 클라이언트가 보�
 | 종료 확인 | `/LOGOUT_OK` | 인자 없음 | 서버 → 요청자 | 정상 종료 요청을 처리할 때 | 콘솔 출력 후 입력 종료 감지 |
 | 오류 안내 | `/ERROR DUPLICATE_USER 사용 중인 ID입니다` | 오류 코드, 설명 | 서버 → 요청자 | 잘못된 요청 처리 시 | 콘솔 출력. 일반 요청 오류 후에는 다음 명령어 입력 가능 |
 
+## 채팅방·메시지·읽음 메시지 (B 담당)
+
+| 기능 | 형식 및 예시 | 값의 의미 | 방향 | 전송 시점 | 수신 후 처리 |
+|---|---|---|---|---|---|
+| 방 만들기 | `/CREATE_ROOM room1 우리 방` | 방 ID, 방 이름(공백 가능, 30자까지) | 클라이언트 → 서버 | 새 방이 필요할 때 | ID 형식·중복 검사 후 방 생성, 만든 사람은 바로 입장 |
+| 방 생성 성공 | `/ROOM_CREATED room1 우리 방` | 방 ID, 방 이름 | 서버 → 요청자 | 방 생성 성공 시 | 콘솔 출력 |
+| 방 입장 | `/JOIN_ROOM room1` | 방 ID | 클라이언트 → 서버 | 있는 방에 들어갈 때 | 방 존재·중복 입장 검사 후 입장 |
+| 입장 성공 | `/JOIN_OK room1 우리 방` | 방 ID, 방 이름 | 서버 → 요청자 | 입장 성공 시 | 콘솔 출력 |
+| 입장 알림 | `/ROOM_JOINED room1 user2 테스터2` | 방 ID, 들어온 사람의 ID·닉네임 | 서버 → 방에 있던 다른 사람 | 누군가 입장했을 때 | 콘솔 출력 |
+| 방 나가기 | `/LEAVE_ROOM room1` | 방 ID | 클라이언트 → 서버 | 방에서 나갈 때 | 참여 여부 검사 후 퇴장. 방은 삭제되지 않음 |
+| 퇴장 성공 | `/LEAVE_OK room1` | 방 ID | 서버 → 요청자 | 퇴장 성공 시 | 콘솔 출력 |
+| 퇴장 알림 | `/ROOM_LEFT room1 user2` | 방 ID, 나간 사람 ID | 서버 → 방에 남은 사람 | 나가거나 연결이 끊겼을 때 | 콘솔 출력 |
+| 채팅 요청 | `/CHAT room1 user1 안녕 하세요` | 방 ID, 발신자 ID, 본문 | 클라이언트 → 서버 | 방에서 말할 때 | 발신자·방·참여 여부 검사, 메시지에 번호를 붙여 저장 후 방 전체에 전달 |
+| 채팅 전달 | `/CHAT room1 1 user1 안녕 하세요` | 방 ID, **메시지 번호**, 발신자 ID, 본문 | 서버 → 방 전체(보낸 사람 포함) | 채팅 요청 처리 시 | 콘솔 출력. 읽음 요청에 이 번호를 사용 |
+| 읽음 요청 | `/READ_MESSAGE room1 1` | 방 ID, 메시지 번호 | 클라이언트 → 서버 | 메시지를 읽었을 때 | 참여 여부·메시지 존재 검사 후 읽음 처리. 이미 읽었으면 응답 없음 |
+| 읽음 알림 | `/MESSAGE_READ room1 1 user2 1` | 방 ID, 메시지 번호, 읽은 사람 ID, 아직 안 읽은 사람 수 | 서버 → 방 전체 | 처음 읽음 처리됐을 때 | 콘솔 출력 |
+
+메시지 번호는 방마다 1부터 늘어나며, 방마다 최근 200개만 보관합니다. 200개를 넘어 지워진 메시지의 읽음 요청은 `MESSAGE_NOT_FOUND`입니다. 보낸 사람은 자기 메시지를 이미 읽은 것으로 계산합니다. 연결이 끊기면 들어가 있던 모든 방에서 빠지며 `/ROOM_LEFT`가 `/USER_LIST`보다 먼저 전달됩니다. 방에 사람이 없어져도 방은 남아 있고, 삭제(`DELETE_ROOM`)와 메시지 삭제(`DELETE_MESSAGE`)는 아직 `NOT_IMPLEMENTED`입니다.
+
+방 관련 오류 코드는 `DUPLICATE_ROOM`, `ROOM_NOT_FOUND`, `ALREADY_IN_ROOM`, `NOT_IN_ROOM`, `MESSAGE_NOT_FOUND`입니다.
+
 ## B·C 연결 지점
 
 | 명령어 | 호출 메서드 | 현재 상태 |
 |---|---|---|
-| CREATE_ROOM | RoomManager.createRoom | B 구현 예정 |
-| JOIN_ROOM | RoomManager.joinRoom | B 구현 예정 |
-| LEAVE_ROOM | RoomManager.leaveRoom | B 구현 예정 |
+| CREATE_ROOM | RoomManager.createRoom | 구현 |
+| JOIN_ROOM | RoomManager.joinRoom | 구현 |
+| LEAVE_ROOM | RoomManager.leaveRoom | 구현 |
 | DELETE_ROOM | RoomManager.deleteRoom | B 구현 예정 |
-| CHAT | RoomManager.chat | 인자·발신자 검사만 구현 |
+| CHAT | RoomManager.chat | 구현(메시지 번호 포함 전달) |
 | DELETE_MESSAGE | RoomManager.deleteMessage | B 구현 예정 |
-| READ_MESSAGE | RoomManager.readMessage | B 구현 예정 |
+| READ_MESSAGE | RoomManager.readMessage | 구현 |
 | GAME_RECORD, COIN_UPDATE, EMOTICON_SEND | GameService.handle | C 구현 예정 |
 
-모든 요청에는 `/`를 붙입니다. CHAT 형식은 합의 예시인 `/CHAT room1 user1 안녕 하세요`를 따릅니다. 서버는 senderId가 로그인 ID와 일치하는지 확인합니다. B는 추가로 방 존재 여부와 참여자 여부를 검사하고 수신자에게 전달해야 합니다. 나머지 B·C 명령어의 인자와 성공 응답은 각 담당자가 합의 후 이 문서에 추가합니다. 현재는 성공을 가장하지 않고 `NOT_IMPLEMENTED`를 반환합니다.
+모든 요청에는 `/`를 붙입니다. CHAT 형식은 합의 예시인 `/CHAT room1 user1 안녕 하세요`를 따릅니다. 서버는 senderId가 로그인 ID와 일치하는지 확인합니다. 방 존재 여부와 참여자 여부 검사, 방 안 전달은 B가 구현했습니다. 나머지 B·C 명령어의 인자와 성공 응답은 각 담당자가 합의 후 이 문서에 추가합니다. 현재는 성공을 가장하지 않고 `NOT_IMPLEMENTED`를 반환합니다.
 
 코인 증가는 추후 C가 서버에서 검증한 게임 결과를 근거로 처리해야 합니다. 현재 COIN_UPDATE는 클라이언트가 잔액을 변경하는 기능을 제공하지 않습니다.
