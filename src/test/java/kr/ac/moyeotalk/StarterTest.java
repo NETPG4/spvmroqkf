@@ -112,8 +112,8 @@ public final class StarterTest {
                 a.send("CHAT room1 user1 test"); a.error("BAD_REQUEST");
                 // 다른 로그인 사용자의 ID로 채팅을 보내면 거부해야 한다.
                 a.send("/CHAT room1 user2 사칭"); a.error("SENDER_MISMATCH");
-                // 발신자가 일치하면 다음 단계인 미구현 기능 응답까지 도달해야 한다.
-                a.send("/CHAT room1 user1 안녕 하세요"); a.error("NOT_IMPLEMENTED");
+                // 발신자가 일치하면 방 확인 단계까지 도달해야 한다. 방이 없으므로 ROOM_NOT_FOUND가 온다.
+                a.send("/CHAT room1 user1 안녕 하세요"); a.error("ROOM_NOT_FOUND");
                 // 방 생성 요청이 테스트용 방 관리자에 전달되는지 확인한다.
                 a.send("/CREATE_ROOM room1 우리 방"); a.expect("/TEST_ROOM_DISPATCH_OK");
                 // 최대 3초 기다려 전달된 인자의 내용과 공백이 유지되었는지 확인한다.
